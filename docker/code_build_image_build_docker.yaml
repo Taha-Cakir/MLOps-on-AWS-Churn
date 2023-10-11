@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - algorithm_name=sagemaker-rf-codebuild
+      - account=$(aws sts get-caller-identity --query Account --output text)
+      - region=${region:-us-east-1}
+      - fullname="${account}.dkr.ecr.${region}.amazonaws.com/${algorithm_name}:latest"
+      - aws ecr get-login-password --region ${region}|docker login --username AWS --password-stdin ${fullname}
+      #- aws ecr create-repository --repository-name "${algorithm_name}"
+  build:
+    commands:
+      - echo Build started.. 
+      - echo Building the Docker image...          
+      - docker build -t ${algorithm_name} .
+      - docker tag ${algorithm_name} ${fullname}      
+  post_build:
+    commands:
+      - echo Build completed .. 
+      - echo Pushing the Docker image...
+      - docker push ${fullname}
+      
